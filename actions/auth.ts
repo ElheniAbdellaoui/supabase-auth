@@ -108,3 +108,26 @@ export async function signInWithGithub() {
     return redirect(data.url);
   }
 }
+// export async function bootstrapOrg(userId: string, userName: string) {
+//   const supabase = createServerSupabaseClient();
+
+//   const { data: membership } = await supabase
+//     .from("memberships")
+//     .select("org_id")
+//     .eq("user_id", userId)
+//     .single();
+
+//   if (!membership) {
+//     const { data: org } = await supabase
+//       .from("organizations")
+//       .insert({ name: `${userName}'s Org` })
+//       .select()
+//       .single();
+
+//     await supabase.from("memberships").insert({
+//       org_id: org.id,
+//       user_id: userId,
+//       role: "owner",
+//     });
+//   }
+// }

@@ -4,6 +4,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 
+export async function getUserSession() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    return null;
+  }
+  return { status: "success", user: data?.user };
+}
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const credentials = {
@@ -49,6 +57,25 @@ export async function signIn(formData: FormData) {
       user: null,
     };
   }
+  const { data: existingUser } = await supabase
+    .from("user-profile")
+    .select("*")
+    .eq("email", credentials?.email)
+    .limit(1)
+    .single();
+
+  if (!existingUser) {
+    const { error: insertError } = await supabase.from("user-profile").insert({
+      email: data?.user.email,
+      username: data?.user?.user_metadata?.username,
+    });
+    if (insertError) {
+      return {
+        status: insertError?.message,
+        user: null,
+      };
+    }
+  }
 
   revalidatePath("/", "layout");
   return { status: "success", user: data.user };
@@ -64,4 +91,20 @@ export async function signOut() {
 
   revalidatePath("/", "layout");
   redirect("/login");
+}
+
+export async function signInWithGithub() {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "github",
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  });
+  if (error) {
+    redirect("/error");
+  } else if (data.url) {
+    return redirect(data.url);
+  }
 }

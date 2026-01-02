@@ -1,19 +1,14 @@
-const org = await supabase
-  .from("memberships")
-  .select("org_id")
-  .eq("user_id", user.id)
-  .single();
+import { createClient } from "@/utils/supabase/server";
 
-if (!org) {
-  const { data: newOrg } = await supabase
-    .from("organizations")
-    .insert({ name: `${user.user_metadata.full_name}'s Org` })
-    .select()
+export async function getUserOrganization(userId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("memberships")
+    .select("org_id")
+    .eq("user_id", userId)
     .single();
 
-  await supabase.from("memberships").insert({
-    org_id: newOrg.id,
-    user_id: user.id,
-    role: "owner",
-  });
+  if (error) return null;
+  return data.org_id;
 }
